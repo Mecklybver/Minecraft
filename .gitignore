@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Explicitly include specific files
+vite.config.js
+package-lock.json
+package.json
+
+# Ignore .gitignore itself
+.gitignore
