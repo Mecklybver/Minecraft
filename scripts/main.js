@@ -3,17 +3,20 @@ import {
   Scene,
   PerspectiveCamera,
   PCFSoftShadowMap,
+  Fog
 } from "three";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { World } from "./world.js";
-import { lights } from "./lights.js";
+import { World} from "./world.js";
+import { Lights } from "./lights.js";
 import { createUI } from "./gui.js";
+import { Player } from "./player.js";
+import { Physics } from "./physics.js";
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
-const renderer = new WebGLRenderer({antialias: true});
+const renderer = new WebGLRenderer({antialias: true, alpha: true});
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x80a0e0, 1);
@@ -21,15 +24,15 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-const camera = new PerspectiveCamera(
+const orbitCamera = new PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
-camera.position.set(-32, 16 , -32)
+orbitCamera.position.set(-32, 16 , -32)
 
-const controls = new OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(orbitCamera, renderer.domElement);
 controls.target.set(16, 0, 16);
 controls.update();
 
@@ -38,20 +41,38 @@ const world = new World();
 world.generate();
 scene.add(world);
 
+const player = new Player(scene);
+
+const physics = new Physics(scene);
+
+const lights = new Lights(scene);
+
+scene.fog= new Fog(0x80a0e0, 50, 100);
 
 
+
+let previousTime = performance.now();
 const animate = () => {
-  renderer.render(scene, camera);
+  let currentTime = performance.now();
+  const deltaTime = (currentTime - previousTime) / 1000;
   requestAnimationFrame(animate);
+
+  physics.update(deltaTime, player, world);
+  lights.update(player);
+  world.update(player);
+  renderer.render(scene,player.controls.isLocked ? player.camera : orbitCamera);
   stats.update();
+
+  previousTime = currentTime;
 };
 
-lights(scene);
-createUI(world);
+createUI(world, player, scene);
 animate();
 
 addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
+  orbitCamera.aspect = window.innerWidth / window.innerHeight;
+  orbitCamera.updateProjectionMatrix();
+  player.camera.aspect = window.innerWidth / window.innerHeight;
+  player.camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
