@@ -12,6 +12,7 @@ import { Lights } from "./lights.js";
 import { createUI } from "./gui.js";
 import { Player } from "./player.js";
 import { Physics } from "./physics.js";
+import { blocks} from "./blocks.js";
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
@@ -41,7 +42,7 @@ const world = new World();
 world.generate();
 scene.add(world);
 
-const player = new Player(scene);
+const player = new Player(scene, orbitCamera);
 
 const physics = new Physics(scene);
 
@@ -51,12 +52,26 @@ scene.fog= new Fog(0x80a0e0, 50, 100);
 
 function onMouseDown(e) {
   if (player.controls.isLocked && player.selectedCoords) {
-    console.log(`removing block at ${JSON.stringify(player.selectedCoords)}`)
-    world.removeBlock(
-      player.selectedCoords.x,
-      player.selectedCoords.y,
-      player.selectedCoords.z
-    )
+    if (player.activeBlockId === blocks.empty.id) {
+
+
+      console.log(`removing block at ${JSON.stringify(player.selectedCoords)}`)
+      world.removeBlock(
+        player.selectedCoords.x,
+        player.selectedCoords.y,
+        player.selectedCoords.z
+      )
+    } else {
+       console.log(
+         `adding block at ${JSON.stringify(player.selectedCoords)}`
+       );
+       world.addBlock(
+         player.selectedCoords.x,
+         player.selectedCoords.y,
+         player.selectedCoords.z,
+         player.activeBlockId
+       );
+    }
   }
 
 }

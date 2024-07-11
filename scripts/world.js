@@ -1,5 +1,6 @@
 import { Group } from "three";
 import { WorldChunk } from "./worldchunk";
+import { DataStore } from "./dataStore";
 
 export class World extends Group {
   drawDistance = 1;
@@ -17,16 +18,18 @@ export class World extends Group {
       offset: 0.2,
     },
   };
+  dataStore = new DataStore();
 
   constructor(seed = 0) {
     super();
   }
 
   generate() {
+    this.dataStore.clear();
     this.disposeChunks();
     for (let x = -1; x <= 1; x++) {
       for (let z = -1; z <= 1; z++) {
-        const chunk = new WorldChunk(this.chunkSize, this.params);
+        const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
         chunk.position.set(
           x * (this.chunkSize.width + this.gap),
           0,
@@ -130,7 +133,7 @@ export class World extends Group {
    * @param {number} z
    */
   generateChunk(x, z) {
-    const chunk = new WorldChunk(this.chunkSize, this.params);
+    const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
     chunk.position.set(
       x * (this.chunkSize.width + this.gap),
       0,
@@ -225,33 +228,77 @@ export class World extends Group {
    * @param {number} z
    */
   removeBlock(x, y, z) {
-  const coords = this.worldToChunkCoords(x, y, z);
-  const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
 
-  if (chunk) {
-    chunk.removeBlock(coords.block.x, coords.block.y, coords.block.z);
+    if (chunk) {
+      chunk.removeBlock(coords.block.x, coords.block.y, coords.block.z);
 
-    // Reveal any adjacent blocks that may have been exposed after the block at (x,y,z) was removed
-    this.revealBlock(x - 1, y, z);
-    this.revealBlock(x + 1, y, z);
-    this.revealBlock(x, y - 1, z);
-    this.revealBlock(x, y + 1, z);
-    this.revealBlock(x, y, z - 1);
-    this.revealBlock(x, y, z + 1);
+      // Reveal any adjacent blocks that may have been exposed after the block at (x,y,z) was removed
+      this.revealBlock(x - 1, y, z);
+      this.revealBlock(x + 1, y, z);
+      this.revealBlock(x, y - 1, z);
+      this.revealBlock(x, y + 1, z);
+      this.revealBlock(x, y, z - 1);
+      this.revealBlock(x, y, z + 1);
+    }
   }
-}
 
-revealBlock(x, y, z) {
-  const coords = this.worldToChunkCoords(x, y, z);
-  const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+  /**
+   *
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   * @param {number} blockId
+   */
+  addBlock(x, y, z, blockId) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
 
-  if (chunk) {
-    chunk.addBlockInstance(
-      coords.block.x,
-      coords.block.y,
-      coords.block.z
-    );
+    if (chunk) {
+      chunk.addBlock(coords.block.x, coords.block.y, coords.block.z, blockId);
+      // Reveal any adjacent blocks that may have been exposed after the block at (x,y,z) was removed
+      this.hideBlock(x - 1, y, z);
+      this.hideBlock(x + 1, y, z);
+      this.hideBlock(x, y - 1, z);
+      this.hideBlock(x, y + 1, z);
+      this.hideBlock(x, y, z - 1);
+      this.hideBlock(x, y, z + 1);
+    }
   }
-}
 
+  /**
+   *
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+
+  revealBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlockInstance(coords.block.x, coords.block.y, coords.block.z);
+    }
+  }
+  /**
+   *
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+
+  hideBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    // Remove the block instance if it is totally obscured
+    if (
+      chunk &&
+      chunk.isBlockObscured(coords.block.x, coords.block.y, coords.block.z)
+    ) {
+      chunk.deleteBlockInstance(coords.block.x, coords.block.y, coords.block.z);
+    }
+  }
 }

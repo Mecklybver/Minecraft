@@ -5,6 +5,7 @@ import {
   Scene,
   CameraHelper,
   CylinderGeometry,
+  CapsuleGeometry,
   MeshBasicMaterial,
   Euler,
   Raycaster,
@@ -12,6 +13,7 @@ import {
   Matrix4,
   BoxGeometry
 } from "three";
+import { blocks } from "./blocks";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
 import { isGuiVisible } from "./gui";
 
@@ -30,6 +32,7 @@ export class Player {
   cameraHelper = new CameraHelper(this.camera);
   raycaster = new Raycaster(undefined, undefined, 0, 5);
   selectedCoords = null;
+  activeBlockId = blocks.grass.id
   maxSpeed = 5;
   jumpSpeed = 10;
   onGround = false;
@@ -41,8 +44,9 @@ export class Player {
    *
    * @param {Scene} scene
    */
-  constructor(scene) {
+  constructor(scene, orbitControl) {
     this.position.set(32, 32, 32);
+    this.orbitControl = orbitControl;
     scene.add(this.camera, this.cameraHelper);
 
     document.addEventListener("keydown", this.onKeyDown.bind(this));
@@ -53,7 +57,7 @@ export class Player {
       new MeshBasicMaterial({ wireframe: true })
     );
 
-    // scene.add(this.boundsHelper);
+    scene.add(this.boundsHelper);
 
     const selectionMaterial = new MeshBasicMaterial({
       color: 0xffffaa,
@@ -70,6 +74,7 @@ export class Player {
    */
   update(world) {
     this.updateRaycaster(world);
+    // this.updateBoundsHelper();
   }
   /**
    *
@@ -91,6 +96,11 @@ export class Player {
       this.selectedCoords = chunk.position.clone();
       this.selectedCoords.applyMatrix4(blockMatrix);
 
+      if (this.activeBlockId !== blocks.empty.id) {
+        this.selectedCoords.add(intersection.normal)
+
+      }
+
 
       this.selectionHelper.position.copy(this.selectedCoords);
       this.selectionHelper.visible = true;
@@ -98,7 +108,7 @@ export class Player {
       this.selectedCoords = null;
       this.selectionHelper.visible = false;
     }
-    
+
   }
 
   applyInputs(deltaTime) {
@@ -143,6 +153,16 @@ export class Player {
     }
 
     switch (e.code) {
+      case "Digit0":
+      case "Digit1":
+      case "Digit2":
+      case "Digit3":
+      case "Digit4":
+      case "Digit5":
+        this.activeBlockId = Number(e.key);
+        console.log(`set block id to ${this.activeBlockId}`);
+
+        break;
       case "KeyW":
         this.input.z = this.maxSpeed;
         break;
@@ -165,6 +185,11 @@ export class Player {
           this.velocity.y = this.jumpSpeed;
         }
         break;
+      case "KeyP":
+      //orbitControl position to player position
+        this.orbitControl.position.copy(this.position);
+        break;
+
 
       default:
         break;

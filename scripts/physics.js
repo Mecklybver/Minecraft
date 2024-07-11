@@ -54,7 +54,7 @@ export class Physics {
       this.accumulator -= this.stepSize;
     }
 
-    // player.updateBoundsHelper();
+    player.updateBoundsHelper();
   }
 
   /**
