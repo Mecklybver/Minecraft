@@ -59,7 +59,7 @@ export class World extends Group {
    */
 
   getVisibleChunks(player) {
-    const coords = this.worldToChunksCoords(
+    const coords = this.worldToChunkCoords(
       player.position.x,
       0,
       player.position.z
@@ -140,7 +140,6 @@ export class World extends Group {
 
     if (this.asyncLoading) {
       requestIdleCallback(chunk.generate.bind(chunk), { timeout: 1000 });
-
     } else {
       chunk.generate();
     }
@@ -156,7 +155,7 @@ export class World extends Group {
    */
 
   getBlock(x, y, z) {
-    const coords = this.worldToChunksCoords(x, y, z);
+    const coords = this.worldToChunkCoords(x, y, z);
     const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
     if (chunk && chunk.loaded) {
       return chunk.getBlock(coords.block.x, coords.block.y, coords.block.z);
@@ -181,7 +180,7 @@ export class World extends Group {
    * }
    */
 
-  worldToChunksCoords(x, y, z) {
+  worldToChunkCoords(x, y, z) {
     const chunkCoords = {
       x: Math.floor(x / this.chunkSize.width),
       z: Math.floor(z / this.chunkSize.width),
@@ -218,4 +217,41 @@ export class World extends Group {
     });
     this.clear();
   }
+
+  /**
+   * Removes the block at (x, y, z) and sets it to empty
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  removeBlock(x, y, z) {
+  const coords = this.worldToChunkCoords(x, y, z);
+  const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+  if (chunk) {
+    chunk.removeBlock(coords.block.x, coords.block.y, coords.block.z);
+
+    // Reveal any adjacent blocks that may have been exposed after the block at (x,y,z) was removed
+    this.revealBlock(x - 1, y, z);
+    this.revealBlock(x + 1, y, z);
+    this.revealBlock(x, y - 1, z);
+    this.revealBlock(x, y + 1, z);
+    this.revealBlock(x, y, z - 1);
+    this.revealBlock(x, y, z + 1);
+  }
+}
+
+revealBlock(x, y, z) {
+  const coords = this.worldToChunkCoords(x, y, z);
+  const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+  if (chunk) {
+    chunk.addBlockInstance(
+      coords.block.x,
+      coords.block.y,
+      coords.block.z
+    );
+  }
+}
+
 }

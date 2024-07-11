@@ -6,8 +6,8 @@ export let isGuiVisible = true;
 export function createUI(world, player, scene) {
   const gui = new GUI();
   const sceneFolder = gui.addFolder("Scene");
-  sceneFolder.add(scene.fog, "near", 0, 100).name("Near");
-  sceneFolder.add(scene.fog, "far", 100, 1000).name("Far");
+  sceneFolder.add(scene.fog, "near", 0, 100, 1).name("Fog Near");
+  sceneFolder.add(scene.fog, "far", 20, 200, 1).name("Fog Far");
 
   const playerFolder = gui.addFolder("Player");
   playerFolder.add(player, "maxSpeed", 1, 20).name("Max Speed");

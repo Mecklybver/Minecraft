@@ -7,9 +7,15 @@ import {
   CylinderGeometry,
   MeshBasicMaterial,
   Euler,
+  Raycaster,
+  Vector2,
+  Matrix4,
+  BoxGeometry
 } from "three";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
 import { isGuiVisible } from "./gui";
+
+const CENTER_SCREEN = new Vector2();
 export class Player {
   camera = new PerspectiveCamera(
     70,
@@ -22,6 +28,8 @@ export class Player {
   velocity = new Vector3();
   controls = new PointerLockControls(this.camera, document.body);
   cameraHelper = new CameraHelper(this.camera);
+  raycaster = new Raycaster(undefined, undefined, 0, 5);
+  selectedCoords = null;
   maxSpeed = 5;
   jumpSpeed = 10;
   onGround = false;
@@ -45,7 +53,52 @@ export class Player {
       new MeshBasicMaterial({ wireframe: true })
     );
 
-    scene.add(this.boundsHelper);
+    // scene.add(this.boundsHelper);
+
+    const selectionMaterial = new MeshBasicMaterial({
+      color: 0xffffaa,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const selectionGeometry = new BoxGeometry(1.001, 1.001, 1.001);
+    this.selectionHelper = new Mesh(selectionGeometry, selectionMaterial);
+    scene.add(this.selectionHelper);
+  }
+  /**
+   *
+   * @param {World} world
+   */
+  update(world) {
+    this.updateRaycaster(world);
+  }
+  /**
+   *
+   * @param {World} world
+   */
+
+  updateRaycaster(world) {
+    this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
+    const intersections = this.raycaster.intersectObject(world, true);
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+
+      const chunk = intersection.object.parent;
+
+
+      const blockMatrix = new Matrix4();
+      intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
+
+      this.selectedCoords = chunk.position.clone();
+      this.selectedCoords.applyMatrix4(blockMatrix);
+
+
+      this.selectionHelper.position.copy(this.selectedCoords);
+      this.selectionHelper.visible = true;
+    } else {
+      this.selectedCoords = null;
+      this.selectionHelper.visible = false;
+    }
+    
   }
 
   applyInputs(deltaTime) {

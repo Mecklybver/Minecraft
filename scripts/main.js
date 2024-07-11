@@ -49,14 +49,25 @@ const lights = new Lights(scene);
 
 scene.fog= new Fog(0x80a0e0, 50, 100);
 
+function onMouseDown(e) {
+  if (player.controls.isLocked && player.selectedCoords) {
+    console.log(`removing block at ${JSON.stringify(player.selectedCoords)}`)
+    world.removeBlock(
+      player.selectedCoords.x,
+      player.selectedCoords.y,
+      player.selectedCoords.z
+    )
+  }
 
+}
+document.addEventListener('mousedown', onMouseDown);
 
 let previousTime = performance.now();
 const animate = () => {
   let currentTime = performance.now();
   const deltaTime = (currentTime - previousTime) / 1000;
   requestAnimationFrame(animate);
-
+  player.update(world);
   physics.update(deltaTime, player, world);
   lights.update(player);
   world.update(player);

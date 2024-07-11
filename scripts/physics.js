@@ -8,6 +8,7 @@ import {
 } from "three";
 import { blocks } from "./blocks";
 import { Player } from "./player";
+import { WorldChunk } from "./worldchunk";
 
 const collisionMaterial = new MeshBasicMaterial({
   color: 0xff0000,
@@ -34,7 +35,7 @@ export class Physics {
 
   constructor(scene) {
     this.helpers = new Group();
-    this.helpers.visible = true;
+    this.helpers.visible = false;
     scene.add(this.helpers);
   }
 
@@ -42,7 +43,7 @@ export class Physics {
    * Moves the physics simulation forward in time by 'dt'
    * @param {number} deltaTime
    * @param {Player} player
-   * @param {World} world
+   * @param {WorldChunk} world
    */
   update(deltaTime, player, world) {
     this.accumulator += deltaTime;
@@ -53,7 +54,7 @@ export class Physics {
       this.accumulator -= this.stepSize;
     }
 
-    player.updateBoundsHelper();
+    // player.updateBoundsHelper();
   }
 
   /**
