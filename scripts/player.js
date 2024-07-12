@@ -25,6 +25,7 @@ export class Player {
     0.1,
     1000
   );
+
   radius = 0.5;
   height = 1.75;
   velocity = new Vector3();
@@ -48,7 +49,7 @@ export class Player {
     this.position.set(32, 32, 32);
     this.orbitControl = orbitControl;
     scene.add(this.camera, this.cameraHelper);
-
+    this.cameraHelper.visible = false;
     document.addEventListener("keydown", this.onKeyDown.bind(this));
     document.addEventListener("keyup", this.onKeyUp.bind(this));
 
@@ -56,7 +57,7 @@ export class Player {
       new CylinderGeometry(this.radius, this.radius, this.height, 16),
       new MeshBasicMaterial({ wireframe: true })
     );
-
+    this.boundsHelper.visible = false;
     scene.add(this.boundsHelper);
 
     const selectionMaterial = new MeshBasicMaterial({
@@ -159,6 +160,8 @@ export class Player {
       case "Digit3":
       case "Digit4":
       case "Digit5":
+      case "Digit6":
+      case "Digit7":
         this.activeBlockId = Number(e.key);
         console.log(`set block id to ${this.activeBlockId}`);
 

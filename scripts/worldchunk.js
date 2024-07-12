@@ -35,10 +35,11 @@ export class WorldChunk extends Group {
     this.initializeTerrain();
     this.generateResources(rng);
     this.generateTerrain(rng);
+    this.generateTrees(rng);
+    this.generateClouds(rng);
     this.loadPlayerChanges();
     this.generateMeshes();
     this.loaded = true;
-
   }
   initializeTerrain() {
     this.data = [];
@@ -111,8 +112,16 @@ export class WorldChunk extends Group {
     for (let x = 0; x < this.size.width; x++) {
       for (let y = 0; y < this.size.height; y++) {
         for (let z = 0; z < this.size.width; z++) {
-          if (this.dataStore.contains(this.position.x, this.position.z, x, y, z)) {
-            const blockId = this.dataStore.get(this.position.x, this.position.z, x, y, z);
+          if (
+            this.dataStore.contains(this.position.x, this.position.z, x, y, z)
+          ) {
+            const blockId = this.dataStore.get(
+              this.position.x,
+              this.position.z,
+              x,
+              y,
+              z
+            );
             this.setBlockId(x, y, z, blockId);
           }
         }
@@ -156,6 +165,81 @@ export class WorldChunk extends Group {
       }
     }
     this.add(...Object.values(meshes));
+  }
+
+  /**
+   *
+   * @param {RNG} rng
+   */
+  generateTrees(rng) {
+    const generateTreeTrunk = (x, z, rng) => {
+      const minH = this.params.trees.trunk.minHeight;
+      const maxH = this.params.trees.trunk.maxHeight;
+      const h = Math.round(minH + (maxH - minH) * rng.random());
+
+      for (let y = 0; y < this.size.height; y++) {
+        const block = this.getBlock(x, y, z);
+        if (block && block.id === blocks.grass.id) {
+          for (let treeY = 0; treeY <= y + h; treeY++) {
+            this.setBlockId(x, treeY, z, blocks.tree.id);
+          }
+          generateTreeCanopy(x, y + h, z, rng); // Corrected: Call generateTreeCanopy here with the proper parameters
+          break; // Ensure we break out of the loop once the tree trunk is generated
+        }
+      }
+    };
+
+    const generateTreeCanopy = (centerX, centerY, centerZ, rng) => {
+      const minR = this.params.trees.canopy.minRadius;
+      const maxR = this.params.trees.canopy.maxRadius;
+      const r = Math.round(minR + (maxR - minR) * rng.random());
+
+      for (let x = -r; x <= r; x++) {
+        for (let y = -r; y <= r; y++) {
+          for (let z = -r; z <= r; z++) {
+            const n = rng.random()
+            if (x * x + y * y + z * z >= r * r) continue;
+            const block = this.getBlock(centerX + x, centerY + y, centerZ + z);
+            if (block && block.id !== blocks.empty.id) continue;
+            if (n < this.params.trees.canopy.density) {
+              this.setBlockId(
+                centerX + x,
+                centerY + y,
+                centerZ + z,
+                blocks.leaves.id
+              );
+            }
+          }
+        }
+      }
+    };
+    let offset = this.params.trees.canopy.maxRadius;
+    for (let x = offset; x < this.size.width - offset; x++) {
+      for (let z = offset; z < this.size.width - offset; z++) {
+        if (rng.random() < this.params.trees.frequency) {
+          generateTreeTrunk(x, z, rng);
+        }
+      }
+    }
+  }
+
+  /**
+   * @param {RNG} rng
+   */
+
+  generateClouds(rng) {
+    const simplez = new SimplexNoise(rng);
+    for (let x = 0; x < this.size.width; x++) {
+      for (let z = 0; z < this.size.width; z++) {
+        const value = (simplez.noise(
+          (this.position.x + x) / this.params.clouds.scale,
+          (this.position.z + z) / this.params.clouds.scale
+        ) + 1 )* 0.5;
+        if (value < this.params.clouds.density) {
+          this.setBlockId(x, this.size.height - 1, z, blocks.cloud.id);
+        }
+      }
+    }
   }
 
   /**
@@ -283,9 +367,7 @@ export class WorldChunk extends Group {
    */
 
   addBlock(x, y, z, blockId) {
-
-    if (this.getBlock(x,y,z).id === blocks.empty.id) {
-
+    if (this.getBlock(x, y, z).id === blocks.empty.id) {
       this.setBlockId(x, y, z, blockId);
       this.addBlockInstance(x, y, z);
       this.dataStore.set(this.position.x, this.position.z, x, y, z, blockId);

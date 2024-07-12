@@ -1,6 +1,7 @@
 import { Group } from "three";
 import { WorldChunk } from "./worldchunk";
 import { DataStore } from "./dataStore";
+import { RNG } from "./rng";
 
 export class World extends Group {
   drawDistance = 1;
@@ -13,9 +14,25 @@ export class World extends Group {
   params = {
     seed: 0,
     terrain: {
-      scale: 30,
+      scale: 80,
       magnitude: 0.2,
       offset: 0.2,
+    },
+    trees: {
+      trunk: {
+        minHeight: 4,
+        maxHeight: 7,
+      },
+      canopy: {
+        minRadius: 2,
+        maxRadius: 4,
+        density: 0.5,
+      },
+      frequency: 0.01,
+    },
+    clouds: {
+      scale: 30,
+      density: 0.5,
     },
   };
   dataStore = new DataStore();
@@ -29,7 +46,11 @@ export class World extends Group {
     this.disposeChunks();
     for (let x = -1; x <= 1; x++) {
       for (let z = -1; z <= 1; z++) {
-        const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
+        const chunk = new WorldChunk(
+          this.chunkSize,
+          this.params,
+          this.dataStore
+        );
         chunk.position.set(
           x * (this.chunkSize.width + this.gap),
           0,

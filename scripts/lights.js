@@ -21,7 +21,7 @@ export class Lights {
     this.sun.shadow.camera.bottom = -100;
     this.sun.shadow.camera.near = 0.1;
     this.sun.shadow.camera.far = 200;
-    this.sun.shadow.bias = -0.01;
+    this.sun.shadow.bias = -0.0001;
     this.sun.shadow.mapSize = new Vector2(2048, 2048);
 
     this.scene.add(this.sun);

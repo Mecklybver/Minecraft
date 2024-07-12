@@ -1,7 +1,7 @@
 import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { resources } from "./blocks";
 
-export let isGuiVisible = true;
+export let isGuiVisible = false;
 
 export function createUI(world, player, scene) {
   const gui = new GUI();
@@ -23,6 +23,18 @@ export function createUI(world, player, scene) {
   terrainFolder.add(world.params.terrain, "scale", 10, 100).name("Scale");
   terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("Magnitude");
   terrainFolder.add(world.params.terrain, "offset", 0, 1).name("Offset");
+
+  const treeFolder = gui.addFolder("Trees");
+  treeFolder.add(world.params.trees, "frequency", 0, 0.1).name("Frequency");
+  treeFolder.add(world.params.trees.trunk, "minHeight", 0, 10).name("Min Trunk Height");
+  treeFolder.add(world.params.trees.trunk, "maxHeight", 0, 20).name("Max Trunk Height");
+  treeFolder.add(world.params.trees.canopy, "minRadius", 0, 10).name("Min Canopy Height");
+  treeFolder.add(world.params.trees.canopy, "maxRadius", 0, 20).name("Max Canopy Height");
+  treeFolder.add(world.params.trees.canopy, "density", 0, 1, 0.05).name("Canopy Density");
+
+  const cloudFolder = gui.addFolder("Clouds");
+  cloudFolder.add(world.params.clouds, "density", 0, 1).name("Cloud Cover");
+  cloudFolder.add(world.params.clouds, "scale", 0, 100).name("Cloud Size");
 
   const resourcesFolder = gui.addFolder("Resources");
 

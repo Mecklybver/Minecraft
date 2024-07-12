@@ -1,4 +1,5 @@
 import {
+  MeshBasicMaterial,
   MeshLambertMaterial,
   NearestFilter,
   SRGBColorSpace,
@@ -22,6 +23,10 @@ const textures = {
   stone: loadTexture("textures/stone.png"),
   coalOre: loadTexture("textures/coal_ore.png"),
   ironOre: loadTexture("textures/iron_ore.png"),
+  treeSide: loadTexture("textures/tree_side.png"),
+  treeTop: loadTexture("textures/tree_top.png"),
+  leaves: loadTexture("textures/leaves.png"),
+  sand: loadTexture("textures/sand.png"),
 };
 
 export const blocks = {
@@ -84,6 +89,34 @@ export const blocks = {
     },
     scarcity: 0.9,
   },
+  tree: {
+    id: 6,
+    name: "tree",
+    material: [
+      new MeshLambertMaterial({ map: textures.treeSide }),
+      new MeshLambertMaterial({ map: textures.treeSide }),
+      new MeshLambertMaterial({ map: textures.treeTop }),
+      new MeshLambertMaterial({ map: textures.treeTop }),
+      new MeshLambertMaterial({ map: textures.treeSide }),
+      new MeshLambertMaterial({ map: textures.treeSide }),
+    ]
+  },
+  leaves: {
+    id: 7,
+    name: "leaves",
+    material: new MeshLambertMaterial({ map: textures.leaves }),
+  },
+  sand: {
+    id: 8,
+    name: "sand",
+    material: new MeshLambertMaterial({ map: textures.sand }),
+  },
+  cloud: {
+    id: 9,
+    name: "cloud",
+
+    material: new MeshBasicMaterial({ color: 0xf0f0f0 }),
+  }
 };
 
 export const resources = [blocks.stone, blocks.coalOre, blocks.ironOre];
