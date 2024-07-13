@@ -17,6 +17,7 @@ export class World extends Group {
       scale: 80,
       magnitude: 0.2,
       offset: 0.2,
+      waterHeight : 5.4
     },
     trees: {
       trunk: {

@@ -23,6 +23,7 @@ export function createUI(world, player, scene) {
   terrainFolder.add(world.params.terrain, "scale", 10, 100).name("Scale");
   terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("Magnitude");
   terrainFolder.add(world.params.terrain, "offset", 0, 1).name("Offset");
+  terrainFolder.add(world.params.terrain, "waterHeight", 0, 20).name("Water Height");
 
   const treeFolder = gui.addFolder("Trees");
   treeFolder.add(world.params.trees, "frequency", 0, 0.1).name("Frequency");

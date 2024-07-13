@@ -27,6 +27,7 @@ const textures = {
   treeTop: loadTexture("textures/tree_top.png"),
   leaves: loadTexture("textures/leaves.png"),
   sand: loadTexture("textures/sand.png"),
+  flower : loadTexture("textures/flower.png"),
 };
 
 export const blocks = {
@@ -116,6 +117,11 @@ export const blocks = {
     name: "cloud",
 
     material: new MeshBasicMaterial({ color: 0xf0f0f0 }),
+  },
+  flower: {
+    id: 10,
+    name: "flower",
+    material: new MeshLambertMaterial({ map: textures.flower }),
   }
 };
 

@@ -11,7 +11,8 @@ import {
   Raycaster,
   Vector2,
   Matrix4,
-  BoxGeometry
+  BoxGeometry,
+  InstancedMesh,
 } from "three";
 import { blocks } from "./blocks";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
@@ -25,7 +26,6 @@ export class Player {
     0.1,
     1000
   );
-
   radius = 0.5;
   height = 1.75;
   velocity = new Vector3();
@@ -33,7 +33,7 @@ export class Player {
   cameraHelper = new CameraHelper(this.camera);
   raycaster = new Raycaster(undefined, undefined, 0, 5);
   selectedCoords = null;
-  activeBlockId = blocks.grass.id
+  activeBlockId = blocks.grass.id;
   maxSpeed = 5;
   jumpSpeed = 10;
   onGround = false;
@@ -46,9 +46,11 @@ export class Player {
    * @param {Scene} scene
    */
   constructor(scene, orbitControl) {
+    this.scene = scene;
     this.position.set(32, 32, 32);
     this.orbitControl = orbitControl;
     scene.add(this.camera, this.cameraHelper);
+    this.camera.layers.enable(1)
     this.cameraHelper.visible = false;
     document.addEventListener("keydown", this.onKeyDown.bind(this));
     document.addEventListener("keyup", this.onKeyUp.bind(this));
@@ -76,6 +78,8 @@ export class Player {
   update(world) {
     this.updateRaycaster(world);
     // this.updateBoundsHelper();
+    this.updateFogUnderWater(world);
+
   }
   /**
    *
@@ -90,26 +94,45 @@ export class Player {
 
       const chunk = intersection.object.parent;
 
+      if (
+        intersection.object instanceof InstancedMesh &&
+        intersection.instanceId !== undefined
+      ) {
+        const blockMatrix = new Matrix4();
+        intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
 
-      const blockMatrix = new Matrix4();
-      intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
+        this.selectedCoords = chunk.position.clone();
+        this.selectedCoords.applyMatrix4(blockMatrix);
 
-      this.selectedCoords = chunk.position.clone();
-      this.selectedCoords.applyMatrix4(blockMatrix);
+        if (this.activeBlockId !== blocks.empty.id) {
+          this.selectedCoords.add(intersection.normal);
+        }
 
-      if (this.activeBlockId !== blocks.empty.id) {
-        this.selectedCoords.add(intersection.normal)
-
+        this.selectionHelper.position.copy(this.selectedCoords);
+        this.selectionHelper.visible = true;
+      } else {
+        console.warn(
+          "Intersected object is not an InstancedMesh or instanceId is undefined"
+        );
       }
-
-
-      this.selectionHelper.position.copy(this.selectedCoords);
-      this.selectionHelper.visible = true;
     } else {
       this.selectedCoords = null;
       this.selectionHelper.visible = false;
     }
+  }
 
+  updateFogUnderWater(world) {
+    const underwaterHeight = world.params.terrain.waterHeight; // Assuming you have this parameter available
+
+    if (this.position.y < underwaterHeight && this.controls.isLocked) {
+      this.scene.fog.color.set(0x0099cc); // Blueish color for underwater
+      this.scene.fog.near = 1; // Adjust as needed
+      this.scene.fog.far = 50; // Adjust as needed
+    } else {
+      this.scene.fog.color.set(0xffffff); // Clear color above water
+      this.scene.fog.near = 1; // Reset to default
+      this.scene.fog.far = 1000; // Reset to default
+    }
   }
 
   applyInputs(deltaTime) {
@@ -189,10 +212,9 @@ export class Player {
         }
         break;
       case "KeyP":
-      //orbitControl position to player position
+        //orbitControl position to player position
         this.orbitControl.position.copy(this.position);
         break;
-
 
       default:
         break;

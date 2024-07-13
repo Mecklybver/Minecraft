@@ -1,5 +1,17 @@
-import { Group, BoxGeometry, InstancedMesh, Matrix4, Vector3 } from "three";
+import {
+  Group,
+  BoxGeometry,
+  MeshLambertMaterial,
+  Mesh,
+  Color,
+  InstancedMesh,
+  Matrix4,
+  Vector3,
+  DoubleSide,
+  PlaneGeometry,
+} from "three";
 import { SimplexNoise } from "three/examples/jsm/Addons.js";
+import { Reflector } from "three/examples/jsm/Addons.js";
 import { RNG } from "./rng";
 import { blocks, resources } from "./blocks";
 
@@ -96,10 +108,15 @@ export class WorldChunk extends Group {
         height = Math.max(0, Math.min(height, this.size.height - 1));
 
         for (let y = 0; y <= this.size.height; y++) {
-          if (y < height && this.getBlock(x, y, z).id === blocks.empty.id) {
-            this.setBlockId(x, y, z, blocks.dirt.id);
+          if (y <= this.params.terrain.waterHeight && y <= height) {
+            this.setBlockId(x, y, z, blocks.sand.id);
           } else if (y === height) {
             this.setBlockId(x, y, z, blocks.grass.id);
+          } else if (
+            y < height &&
+            this.getBlock(x, y, z).id === blocks.empty.id
+          ) {
+            this.setBlockId(x, y, z, blocks.dirt.id);
           } else if (y > height) {
             this.setBlockId(x, y, z, blocks.empty.id);
           }
@@ -129,8 +146,36 @@ export class WorldChunk extends Group {
     }
   }
 
+  generateWater() {
+    const waterMaterial = new MeshLambertMaterial({
+      color: 0x9090e0,
+      transparent: true,
+      opacity: 0.5,
+      side: DoubleSide,
+    });
+    const waterGeometry = new PlaneGeometry(this.size.width, this.size.width);
+
+    const waterMesh = new Mesh(waterGeometry, waterMaterial);
+
+
+
+    waterMesh.rotateX(-Math.PI / 2);
+    waterMesh.position.set(
+      this.size.width / 2,
+      this.params.terrain.waterHeight,
+      this.size.width / 2
+    );
+    waterMesh.layers.set(1);
+
+
+    this.add(waterMesh);
+
+  }
+
   generateMeshes() {
-    this.clear();
+    this.disposeChildren();
+
+    this.generateWater();
 
     const maxCount = this.size.width * this.size.height * this.size.width;
     const meshes = {};
@@ -166,6 +211,7 @@ export class WorldChunk extends Group {
     }
     this.add(...Object.values(meshes));
   }
+  
 
   /**
    *
@@ -183,8 +229,8 @@ export class WorldChunk extends Group {
           for (let treeY = 0; treeY <= y + h; treeY++) {
             this.setBlockId(x, treeY, z, blocks.tree.id);
           }
-          generateTreeCanopy(x, y + h, z, rng); // Corrected: Call generateTreeCanopy here with the proper parameters
-          break; // Ensure we break out of the loop once the tree trunk is generated
+          generateTreeCanopy(x, y + h, z, rng);
+          break;
         }
       }
     };
@@ -197,7 +243,7 @@ export class WorldChunk extends Group {
       for (let x = -r; x <= r; x++) {
         for (let y = -r; y <= r; y++) {
           for (let z = -r; z <= r; z++) {
-            const n = rng.random()
+            const n = rng.random();
             if (x * x + y * y + z * z >= r * r) continue;
             const block = this.getBlock(centerX + x, centerY + y, centerZ + z);
             if (block && block.id !== blocks.empty.id) continue;
@@ -213,6 +259,7 @@ export class WorldChunk extends Group {
         }
       }
     };
+
     let offset = this.params.trees.canopy.maxRadius;
     for (let x = offset; x < this.size.width - offset; x++) {
       for (let z = offset; z < this.size.width - offset; z++) {
@@ -231,10 +278,13 @@ export class WorldChunk extends Group {
     const simplez = new SimplexNoise(rng);
     for (let x = 0; x < this.size.width; x++) {
       for (let z = 0; z < this.size.width; z++) {
-        const value = (simplez.noise(
-          (this.position.x + x) / this.params.clouds.scale,
-          (this.position.z + z) / this.params.clouds.scale
-        ) + 1 )* 0.5;
+        const value =
+          (simplez.noise(
+            (this.position.x + x) / this.params.clouds.scale,
+            (this.position.z + z) / this.params.clouds.scale
+          ) +
+            1) *
+          0.5;
         if (value < this.params.clouds.density) {
           this.setBlockId(x, this.size.height - 1, z, blocks.cloud.id);
         }
