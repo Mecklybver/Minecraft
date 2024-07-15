@@ -5,6 +5,7 @@ export let isGuiVisible = false;
 
 export function createUI(world, player, scene) {
   const gui = new GUI();
+
   const sceneFolder = gui.addFolder("Scene");
   sceneFolder.add(scene.fog, "near", 0, 100, 1).name("Fog Near");
   sceneFolder.add(scene.fog, "far", 20, 200, 1).name("Fog Far");
@@ -23,17 +24,44 @@ export function createUI(world, player, scene) {
   terrainFolder.add(world.params.terrain, "scale", 10, 100).name("Scale");
   terrainFolder.add(world.params.terrain, "magnitude", 0, 1).name("Magnitude");
   terrainFolder.add(world.params.terrain, "offset", 0, 1).name("Offset");
-  terrainFolder.add(world.params.terrain, "waterHeight", 0, 20).name("Water Height");
+  terrainFolder
+    .add(world.params.terrain, "waterHeight", 0, 20)
+    .name("Water Height");
+
+  const caveFolder = gui.addFolder("Cave");
+  caveFolder.add(world.params.cave, "visible", true).name("Visible");
+  caveFolder.add(world.params.cave, "scale", 1, 100).name("Scale"); // Scale for horizontal expansion
+  caveFolder.add(world.params.cave, "amplitude", 0, 50).name("Amplitude"); // Adjusted for a broader range
+  caveFolder.add(world.params.cave, "offset", 0, 20).name("Offset"); // Keep the offset range
+  caveFolder.add(world.params.cave, "threshold", 0, 1).name("Threshold"); // Adjusted for a proper range
+  caveFolder
+    .add(world.params.cave, "rotation", 0, Math.PI * 2)
+    .name("Rotation"); // Full rotation in radians
+  caveFolder.add(world.params.cave, "density", 0, 1, 0.05).name("Density");
+  caveFolder.add(world.params.cave, "bottom", 0, 20).name("Depth");
 
   const treeFolder = gui.addFolder("Trees");
+  treeFolder.add(world.params.trees, "visible", true).name("Visible");
   treeFolder.add(world.params.trees, "frequency", 0, 0.1).name("Frequency");
-  treeFolder.add(world.params.trees.trunk, "minHeight", 0, 10).name("Min Trunk Height");
-  treeFolder.add(world.params.trees.trunk, "maxHeight", 0, 20).name("Max Trunk Height");
-  treeFolder.add(world.params.trees.canopy, "minRadius", 0, 10).name("Min Canopy Height");
-  treeFolder.add(world.params.trees.canopy, "maxRadius", 0, 20).name("Max Canopy Height");
-  treeFolder.add(world.params.trees.canopy, "density", 0, 1, 0.05).name("Canopy Density");
+  treeFolder
+    .add(world.params.trees.trunk, "minHeight", 0, 10)
+    .name("Min Trunk Height");
+  treeFolder
+    .add(world.params.trees.trunk, "maxHeight", 0, 20)
+    .name("Max Trunk Height");
+  treeFolder
+    .add(world.params.trees.canopy, "minRadius", 0, 10)
+    .name("Min Canopy Height");
+  treeFolder
+    .add(world.params.trees.canopy, "maxRadius", 0, 20)
+    .name("Max Canopy Height");
+  treeFolder
+    .add(world.params.trees.canopy, "density", 0, 1, 0.05)
+    .name("Canopy Density");
 
   const cloudFolder = gui.addFolder("Clouds");
+  cloudFolder.add(world.params.clouds, "visible", true).name("Visible");
+
   cloudFolder.add(world.params.clouds, "density", 0, 1).name("Cloud Cover");
   cloudFolder.add(world.params.clouds, "scale", 0, 100).name("Cloud Size");
 

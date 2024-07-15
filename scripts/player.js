@@ -13,6 +13,7 @@ import {
   Matrix4,
   BoxGeometry,
   InstancedMesh,
+  Group,
 } from "three";
 import { blocks } from "./blocks";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
@@ -41,19 +42,36 @@ export class Player {
   velocity = new Vector3();
   #worldVelocity = new Vector3();
 
+  tool = {
+    // Group that will contain the tool mesh
+    container: new Group(),
+    // Whether or not the tool is currently animating
+    animate: false,
+    // The time the animation was started
+    animationStart: 0,
+    // The rotation speed of the tool
+    animationSpeed: 0.025,
+    // Reference to the current animation
+    animation: null,
+  };
+
   /**
    *
    * @param {Scene} scene
    */
   constructor(scene, orbitControl) {
     this.scene = scene;
-    this.position.set(32, 32, 32);
+    this.position.set(32, 45, 32);
     this.orbitControl = orbitControl;
     scene.add(this.camera, this.cameraHelper);
-    this.camera.layers.enable(1)
+    this.camera.layers.enable(1);
+    this.camera.add(this.tool.container);
+    this.param;
+
     this.cameraHelper.visible = false;
     document.addEventListener("keydown", this.onKeyDown.bind(this));
     document.addEventListener("keyup", this.onKeyUp.bind(this));
+    document.addEventListener("mousedown", this.onMouseDown.bind(this));
 
     this.boundsHelper = new Mesh(
       new CylinderGeometry(this.radius, this.radius, this.height, 16),
@@ -76,10 +94,14 @@ export class Player {
    * @param {World} world
    */
   update(world) {
+    this.param = world.params
     this.updateRaycaster(world);
     // this.updateBoundsHelper();
     this.updateFogUnderWater(world);
 
+    if (this.tool.animate) {
+      this.updateTool();
+    }
   }
   /**
    *
@@ -154,6 +176,33 @@ export class Player {
     this.boundsHelper.position.y -= this.height / 2;
   }
 
+  setTool(tool) {
+    this.tool.container.clear();
+    this.tool.container.add(tool);
+    this.tool.container.visible = false;
+    this.tool.container.receiveShadow = true;
+    this.tool.container.castShadow = true;
+
+    this.tool.container.position.set(0.6, -0.3, -0.5);
+    this.tool.container.scale.set(0.5, 0.5, 0.5);
+    this.tool.container.rotation.z = Math.PI / 2;
+    this.tool.container.rotation.y = Math.PI + 0.2;
+  }
+
+  updateTool() {
+    if (this.tool.container.children.length > 0) {
+      const t =
+        this.tool.animationSpeed *
+        (performance.now() - this.tool.animationStart);
+      this.tool.container.children[0].rotation.y = 0.5 * Math.sin(t);
+    }
+  }
+
+  /**
+   * Set the tool object the player is holding
+   * @param {THREE.Mesh} tool
+   */
+
   /**
    * @type {Vector3}
    */
@@ -185,8 +234,15 @@ export class Player {
       case "Digit5":
       case "Digit6":
       case "Digit7":
+      case "Digit8":
+        document.getElementById(`toolbar-${this.activeBlockId}`).classList.remove("selected");
         this.activeBlockId = Number(e.key);
+        document.getElementById(`toolbar-${this.activeBlockId}`).classList.add("selected");
+
+
         console.log(`set block id to ${this.activeBlockId}`);
+
+        this.tool.container.visible = this.activeBlockId === 0;
 
         break;
       case "KeyW":
@@ -203,13 +259,16 @@ export class Player {
         break;
 
       case "KeyR":
-        this.position.set(32, 16, 32);
+        this.position.set(32, 40, 32);
         this.velocity.set(0, 0, 0);
         break;
       case "Space":
-        if (this.onGround) {
-          this.velocity.y = this.jumpSpeed;
-        }
+    if (this.onGround || this.position.y < this.param.terrain.waterHeight) {
+      this.velocity.y = this.jumpSpeed;
+     if (this.position.y < this.param.terrain.waterHeight)
+       this.velocity.y *= 1010;
+    }
+
         break;
       case "KeyP":
         //orbitControl position to player position
@@ -244,6 +303,26 @@ export class Player {
 
       default:
         break;
+    }
+  }
+
+  /**
+   * Event handler for 'mousedown'' event
+   * @param {MouseEvent} e
+   */
+  onMouseDown(e) {
+    // If the tool isn't currently animating, trigger the animation
+    if (!this.tool.animate) {
+      this.tool.animate = true;
+      this.tool.animationStart = performance.now();
+
+      // Clear the existing timeout so it doesn't cancel our new animation
+      clearTimeout(this.tool.animation);
+
+      // Stop the animation after 1.5 cycles
+      this.tool.animation = setTimeout(() => {
+        this.tool.animate = false;
+      }, (3 * Math.PI) / this.tool.animationSpeed);
     }
   }
   toString() {

@@ -12,7 +12,9 @@ import { Lights } from "./lights.js";
 import { createUI } from "./gui.js";
 import { Player } from "./player.js";
 import { Physics } from "./physics.js";
-import { blocks} from "./blocks.js";
+import { blocks } from "./blocks.js";
+import { ModelLoader } from "./modelLoader.js";
+import { WorldChunk } from "./worldchunk.js";
 
 const stats = new Stats();
 document.body.appendChild(stats.dom);
@@ -45,8 +47,15 @@ world.generate();
 scene.add(world);
 
 const player = new Player(scene, orbitCamera);
-
 const physics = new Physics(scene);
+
+const modelLoader = new ModelLoader((models) => {
+  player.setTool(models.pickaxe);
+});
+
+
+
+
 
 const lights = new Lights(scene);
 
@@ -93,8 +102,10 @@ const animate = () => {
 
   previousTime = currentTime;
 };
-
 createUI(world, player, scene);
+
+
+
 animate();
 
 addEventListener("resize", () => {
@@ -104,3 +115,20 @@ addEventListener("resize", () => {
   player.camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+function loadingBar() {
+  const progress = document.getElementById("progress");
+  progress.value = 0;
+  const interval = setInterval(() => {
+    progress.value += 1;
+    if (progress.value >= 100) {
+      progress.style.display = "none";
+      clearInterval(interval);
+    }
+  }, 100);
+}
+
+// loadingBar();
+
+
+

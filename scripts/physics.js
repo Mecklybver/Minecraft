@@ -46,6 +46,12 @@ export class Physics {
    * @param {WorldChunk} world
    */
   update(deltaTime, player, world) {
+    if (player.position.y < world.params.terrain.waterHeight) {
+      this.gravity = 20;
+      player.velocity.y *= 0.001; // Reduce vertical speed in water
+    } else {
+      this.gravity = 32;
+    }
     this.accumulator += deltaTime;
     while (this.accumulator >= this.stepSize) {
       player.velocity.y -= this.gravity * this.stepSize;

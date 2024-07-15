@@ -3,17 +3,18 @@ import {
   BoxGeometry,
   MeshLambertMaterial,
   Mesh,
-  Color,
   InstancedMesh,
   Matrix4,
   Vector3,
   DoubleSide,
   PlaneGeometry,
+  MeshPhongMaterial,
+
 } from "three";
 import { SimplexNoise } from "three/examples/jsm/Addons.js";
-import { Reflector } from "three/examples/jsm/Addons.js";
+// import { Reflector } from "three/examples/jsm/Addons.js";
 import { RNG } from "./rng";
-import { blocks, resources } from "./blocks";
+import { blocks, resources, textures } from "./blocks";
 
 const geometry = new BoxGeometry(1, 1, 1);
 
@@ -32,6 +33,7 @@ export class WorldChunk extends Group {
       scale: 30,
       magnitude: 0.2,
       offset: 0.2,
+
     },
   };
   constructor(size, params, dataStore) {
@@ -47,8 +49,9 @@ export class WorldChunk extends Group {
     this.initializeTerrain();
     this.generateResources(rng);
     this.generateTerrain(rng);
-    this.generateTrees(rng);
-    this.generateClouds(rng);
+    if (this.params.cave.visible)this.generateCave(rng);
+    if (this.params.trees.visible)this.generateTrees(rng);
+    if (this.params.clouds.visible)this.generateClouds(rng);
     this.loadPlayerChanges();
     this.generateMeshes();
     this.loaded = true;
@@ -125,6 +128,46 @@ export class WorldChunk extends Group {
     }
   }
 
+  generateCave(rng) {
+    const { scale, density, amplitude, offset, threshold, rotation } =
+      this.params.cave;
+    const simplex = new SimplexNoise(rng);
+
+    // Pre-calculate rotation values
+    const cosTheta = Math.cos(rotation);
+    const sinTheta = Math.sin(rotation);
+
+    const bottomOffset = this.params.cave.bottom
+
+    for (let x = 0; x < this.size.width; x++) {
+      for (let z = 0; z < this.size.width; z++) {
+        // Apply rotation
+        const rotatedX = x * cosTheta - z * sinTheta;
+        const rotatedZ = x * sinTheta + z * cosTheta;
+
+        const nx = (this.position.x + rotatedX) / scale;
+        const nz = (this.position.z + rotatedZ) / scale;
+        const noiseValue = simplex.noise(nx + offset, nz + offset);
+
+        if (noiseValue > threshold) {
+          for (let y = bottomOffset; y < this.size.height; y++) {
+            // Skip the bottom layers
+
+              const caveNoise = simplex.noise3d(
+                nx,
+                (y - this.size.height / 2) / scale,
+                nz
+              );
+              if (caveNoise < density * amplitude) {
+                this.setBlockId(x, y, z, blocks.empty.id); // Set block to air (or empty)
+              }
+
+          }
+        }
+      }
+    }
+  }
+
   loadPlayerChanges() {
     for (let x = 0; x < this.size.width; x++) {
       for (let y = 0; y < this.size.height; y++) {
@@ -146,9 +189,75 @@ export class WorldChunk extends Group {
     }
   }
 
+  generateFlowers(rng) {
+    const flowerGeometry = new PlaneGeometry(0.5, 0.5);
+
+    // Array of flower textures
+    const flowerTextures = [
+      textures.flower.cosmo,
+      textures.flower.daisy,
+      textures.flower.rose,
+      textures.flower.tulip,
+      textures.flower.sunflower,
+      textures.flower.poppy,
+      textures.flower.dandelion,
+      textures.flower.lavender,
+      textures.flower.orchid,
+      textures.flower.lily,
+      textures.flower.lilyOftheValley,
+      textures.flower.pansy,
+    ];
+
+    // Create a mesh for each flower type
+    const flowerMeshes = flowerTextures.map((texture) => {
+      const material = new MeshLambertMaterial({
+        map: texture,
+        transparent: true,
+        side: DoubleSide,
+      });
+      const mesh = new InstancedMesh(
+        flowerGeometry,
+        material,
+        this.size.width * this.size.width
+      );
+
+      // Set layer for the flower mesh
+      mesh.layers.set(1); // Setting the layer to 1
+
+      return mesh;
+    });
+
+    // Add flower meshes to the world chunk
+    flowerMeshes.forEach((mesh) => {
+      this.add(mesh);
+      mesh.count = 0; // Initialize count for each mesh
+    });
+
+    const matrix = new Matrix4();
+    for (let x = 0; x < this.size.width; x++) {
+      for (let z = 0; z < this.size.width; z++) {
+        if (rng.random() < this.params.flowers.frequency) {
+          for (let y = 0; y < this.size.height; y++) {
+            if (this.getBlock(x, y, z).id === blocks.grass.id) {
+              const instanceId = Math.floor(rng.random() * flowerMeshes.length);
+              const flowerMesh = flowerMeshes[instanceId];
+
+              // Set the position of the flower
+              matrix.setPosition(x, y + 0.8, z);
+              flowerMesh.setMatrixAt(flowerMesh.count, matrix);
+              flowerMesh.count++;
+              break; // Stop after placing one flower
+            }
+          }
+        }
+      }
+    }
+  }
+
   generateWater() {
-    const waterMaterial = new MeshLambertMaterial({
+    const waterMaterial = new MeshPhongMaterial({
       color: 0x9090e0,
+      shininess: 100,
       transparent: true,
       opacity: 0.5,
       side: DoubleSide,
@@ -156,8 +265,6 @@ export class WorldChunk extends Group {
     const waterGeometry = new PlaneGeometry(this.size.width, this.size.width);
 
     const waterMesh = new Mesh(waterGeometry, waterMaterial);
-
-
 
     waterMesh.rotateX(-Math.PI / 2);
     waterMesh.position.set(
@@ -167,9 +274,7 @@ export class WorldChunk extends Group {
     );
     waterMesh.layers.set(1);
 
-
     this.add(waterMesh);
-
   }
 
   generateMeshes() {
@@ -209,9 +314,12 @@ export class WorldChunk extends Group {
         }
       }
     }
+
     this.add(...Object.values(meshes));
+
+    // Generate flowers
+    this.generateFlowers(new RNG(this.params.seed));
   }
-  
 
   /**
    *

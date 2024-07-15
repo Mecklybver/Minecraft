@@ -1,7 +1,6 @@
 import { Group } from "three";
 import { WorldChunk } from "./worldchunk";
 import { DataStore } from "./dataStore";
-import { RNG } from "./rng";
 
 export class World extends Group {
   drawDistance = 1;
@@ -9,17 +8,18 @@ export class World extends Group {
   asyncLoading = true;
   chunkSize = {
     width: 32,
-    height: 32,
+    height: 48,
   };
   params = {
     seed: 0,
     terrain: {
-      scale: 80,
-      magnitude: 0.2,
+      scale: 40,
+      magnitude: 0.15,
       offset: 0.2,
-      waterHeight : 5.4
+      waterHeight: 5.4,
     },
     trees: {
+      visible:true,
       trunk: {
         minHeight: 4,
         maxHeight: 7,
@@ -32,14 +32,74 @@ export class World extends Group {
       frequency: 0.01,
     },
     clouds: {
-      scale: 30,
+      visible: true,
+      scale: 20,
       density: 0.5,
+    },
+    cave: {
+      visible: true,
+      scale: 40,
+      density: 0.005,
+      amplitude: 20,
+      offset: 0.2,
+      threshold: 0.1,
+      rotation: 0,
+      bottom:1
+    },
+    flowers: {
+      visible: true,
+      frequency: 0.01,
     },
   };
   dataStore = new DataStore();
 
   constructor(seed = 0) {
     super();
+    this.Playerposition;
+
+    addEventListener("keydown", (e) => {
+      // console.log(e)
+      switch (e.code) {
+        case "F2":
+          this.save();
+
+          break;
+        case "F4":
+          this.load();
+          break;
+
+        default:
+          break;
+      }
+    });
+  }
+
+  save() {
+    localStorage.setItem("minecraft_params", JSON.stringify(this.params));
+    localStorage.setItem("minecraft_data", JSON.stringify(this.dataStore.data));
+    document.getElementById("status").innerHTML = "Saved";
+    setTimeout(() => {
+      document.getElementById("status").innerHTML = "";
+    }, 3000);
+  }
+
+  load() {
+    this.params = JSON.parse(localStorage.getItem("minecraft_params"));
+    this.dataStore.data = JSON.parse(localStorage.getItem("minecraft_data"));
+
+    document.getElementById("status").innerHTML = "Loaded";
+    setTimeout(() => {
+      document.getElementById("status").innerHTML = "";
+    }, 3000);
+
+    this.regenerate();
+  }
+
+  regenerate() {
+    this.children.forEach((obj) => {
+      obj.disposeChildren();
+    });
+    this.clear();
   }
 
   generate() {
@@ -69,6 +129,7 @@ export class World extends Group {
    */
 
   update(player) {
+    this.Playerposition = player.position
     const visibleChunks = this.getVisibleChunks(player);
     const chunksToAdd = this.getChunksToAdd(visibleChunks);
     this.removeUnusedChunks(visibleChunks);

@@ -3,6 +3,7 @@ import {
   MeshLambertMaterial,
   NearestFilter,
   SRGBColorSpace,
+  DoubleSide,
   TextureLoader,
 } from "three";
 
@@ -16,7 +17,7 @@ function loadTexture(path) {
   return texture;
 }
 
-const textures = {
+export const textures = {
   grass: loadTexture("textures/grass.png"),
   grassSide: loadTexture("textures/grass_side.png"),
   dirt: loadTexture("textures/dirt.png"),
@@ -27,7 +28,20 @@ const textures = {
   treeTop: loadTexture("textures/tree_top.png"),
   leaves: loadTexture("textures/leaves.png"),
   sand: loadTexture("textures/sand.png"),
-  flower : loadTexture("textures/flower.png"),
+  flower: {
+    cosmo: loadTexture("textures/flowers/Cosmo.png"),
+    daisy: loadTexture("textures/flowers/Daisy.png"),
+    rose: loadTexture("textures/flowers/Rose.png"),
+    tulip: loadTexture("textures/flowers/Tulip.png"),
+    sunflower: loadTexture("textures/flowers/Sunflower.png"),
+    poppy: loadTexture("textures/flowers/Poppy.png"),
+    dandelion: loadTexture("textures/flowers/Dandelion.png"),
+    lavender: loadTexture("textures/flowers/Lavender.png"),
+    orchid: loadTexture("textures/flowers/Orchid.png"),
+    lily: loadTexture("textures/flowers/Lily.png"),
+    lilyOftheValley: loadTexture("textures/flowers/LilyOfTheValley.png"),
+    pansy: loadTexture("textures/flowers/Pansy.png"),
+   },
 };
 
 export const blocks = {
@@ -100,7 +114,7 @@ export const blocks = {
       new MeshLambertMaterial({ map: textures.treeTop }),
       new MeshLambertMaterial({ map: textures.treeSide }),
       new MeshLambertMaterial({ map: textures.treeSide }),
-    ]
+    ],
   },
   leaves: {
     id: 7,
@@ -121,8 +135,13 @@ export const blocks = {
   flower: {
     id: 10,
     name: "flower",
-    material: new MeshLambertMaterial({ map: textures.flower }),
-  }
+    material: new MeshLambertMaterial({
+      // color: 0x00ff00,
+      map: textures.flower.cosmo,
+     transparent: true,
+      side: DoubleSide,
+    }),
+  },
 };
 
 export const resources = [blocks.stone, blocks.coalOre, blocks.ironOre];
